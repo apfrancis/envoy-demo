@@ -1,0 +1,11 @@
+version: "3"
+services:
+  dogservice:
+    build: dogservice
+    ports:
+      - "9090:8080"
+
+  catservice:
+    build: catservice
+    ports:
+      - "9091:3000"
