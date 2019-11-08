@@ -1,0 +1,65 @@
+admin:
+  access_log_path: /tmp/admin_access.log
+  address:
+    socket_address: { address: 0.0.0.0, port_value: 8001 }
+
+static_resources:
+  listeners:
+    - address:
+        socket_address:
+          address: 0.0.0.0
+          port_value: 80
+      filter_chains:
+        - filters:
+            - name: envoy.http_connection_manager
+              config:
+                stat_prefix: "ingress"
+                codec_type: "AUTO"
+                generate_request_id: true
+                route_config:
+                  name: local_route
+                  virtual_hosts:
+                    - name: backend
+                      domains:
+                        - "*"
+                      routes:
+                        - match:
+                            prefix: "/cats"
+                          route:
+                            cluster: catservice
+                        - match:
+                            prefix: "/dogs"
+                          route:
+                            cluster: dogservice_envoy
+                http_filters:
+                  - name: envoy.router
+                    typed_config: {}
+  clusters:
+    - name: catservice
+      connect_timeout: 1s
+      type: strict_dns
+      lb_policy: round_robin
+      http2_protocol_options: {}
+      load_assignment:
+        cluster_name: catservice
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address:
+                      address: catservice
+                      port_value: 3000
+    - name: dogservice_envoy
+      connect_timeout: 1s
+      type: strict_dns
+      lb_policy: round_robin
+      http2_protocol_options: {}
+      load_assignment:
+        cluster_name: dogservice
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address:
+                      address: dogservice_envoy
+                      port_value: 80
