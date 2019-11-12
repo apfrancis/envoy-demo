@@ -18,8 +18,27 @@ services:
     volumes:
       - ./dogservice/envoy-config.yml:/etc/envoy-config.yaml
     expose:
-      - "8081"
-    command: "/usr/local/bin/envoy -c /etc/envoy-config.yaml -l info --service-cluster 'dogservice' --service-node 'dogservice'"
+      - "80"
+      - "8002"
+    ports:
+      - "8002:8002"
+    command: "/usr/local/bin/envoy -c /etc/envoy-config.yaml -l info"
+    networks:
+      envoymesh:
+        aliases:
+          - dogservice_envoy
+
+  catservice_envoy:
+    image: envoyproxy/envoy-dev:latest
+    volumes:
+      - ./catservice/envoy-config.yml:/etc/envoy-config.yaml
+    expose:
+      - "80"
+    command: "/usr/local/bin/envoy -c /etc/envoy-config.yaml -l info"
+    networks:
+      envoymesh:
+        aliases:
+          - catservice_envoy
 
   dogservice:
     build: dogservice
@@ -37,9 +56,7 @@ services:
     networks:
       envoymesh:
         aliases:
-          - dogservice
-    ports:
-      - "3000:3000"
+          - catservice
 
 networks:
   envoymesh: {}
